@@ -12,38 +12,303 @@
         <!-- Bootstrap -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 
         <style>
-            #btn_link{
-                background-color: #A9A9A9;
+            #div_table{
+                box-shadow: 1px 1px 5px 1px #A9A9A9;
+                margin-top: 5px;
+                background-color: white;
+                margin-left: auto;
+                margin-right: auto;
+                padding-top: 3% !important;
+                padding-bottom: 2% !important;
+                padding-left: 1% !important;
+                padding-right: 3% !important;
+                overflow-x: scroll;
+            }
+            #botao_nova_consulta{
+                float: right;
+                background: #1cc11c;
+                border-radius: 4px;
                 color: white;
+                width: 138px;
+                font-size: 14px;
+                margin: 5px;
+                cursor: pointer;
+                height: 26px;
                 border: none;
-                box-shadow: 1px 1px 2px #A9A9A9;
-                font-family: 'Trebuchet MS', Helvetica, sans-serif
+            }
+            body{
+                background-color: #40cddb
             }
         </style>
-
-        <script>
-            $(".btn").on('click', function(event){
-                $("#box").css("display", "none");
-            });
-        </script>
     </head>
 
-    <body style="background-color: #40cddb; opacity: 0.8; color: white; text-align: center">
-        <div class="row" style="margin-top: 200px;">
-            <div class="col-sm-12" style="">
-                <div style="background-image: url('https://jointecnologia.com.br/wp-content/themes/theme-bones-master/library/images/logo.png'); background-position: center; background-repeat: no-repeat; height: 150px; background-size: 250px;"></div>
+    <div class="container" ng-app="appJoin" ng-controller="mainController">
+        {# Modal de cadastro #}
+        <div class="modal fade" id="modalCadastro" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Incluir novo alvo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" class="form-control" placeholder="Nome" ng-model="alvo.nome">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo.nome">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" class="form-control" placeholder="Latitude" ng-model="alvo.latitude" ng-disabled="!alvo.nome">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo.latitude">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" class="form-control" placeholder="Longitude" ng-model="alvo.longitude" ng-disabled="!alvo.latitude">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo.longitude">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Expiração</label>
+                        <input type="date" class="form-control" placeholder="Longitude" ng-model="alvo.data_expiracao" ng-disabled="!alvo.longitude">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo.data_expiracao">Campo obrigatório (*)</small>
+                    </div>
+
+                    <p style="text-align: center" ng-show="loading">Carregando ...</p>
+                </form>
+              </div>
+              <div class="modal-footer">
+                    <button type="button" class="btn btn-success" ng-click="cadastrar_alvo()" ng-disabled="!alvo.data_expiracao || loading">Gravar</button>
+                    <button type="button" class="btn btn-warning" data-dismiss="modal" ng-click="alvo={}" ng-disabled="loading" style="color: white">Cancelar</button>
+              </div>
             </div>
-            <div class="col-sm-12" style="margin-top: 18px;">
-                <a href="/admin/">
-                    <button type="button" id="btn_link" class="btn btn-sm" style="border: none">
-                        Ir para o Painel Administrativo
+          </div>
+        </div>
+
+        {# Modal de exibição de dados do alvo #}
+        <div class="modal fade" id="modalExibicao" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Dados do Alvo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form name="formExibicao">
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" class="form-control" placeholder="Nome" ng-model="alvo_obtido.nome" ng-required="true">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo_obtido.nome">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" class="form-control" placeholder="Latitude" ng-model="alvo_obtido.latitude" ng-required="true">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo_obtido.latitude">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" class="form-control" placeholder="Longitude" ng-model="alvo_obtido.longitude" ng-required="true">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo_obtido.longitude">Campo obrigatório (*)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Expiração</label>
+                        <input type="date" class="form-control" id="data_expiracao" ng-model="alvo_obtido.data_expiracao" ng-required="true">
+                        <small class="form-text text-muted" style="color: red !important;" ng-if="!alvo_obtido.data_expiracao">Campo obrigatório (*)</small>
+                    </div>
+
+                    <p style="text-align: center" ng-show="loading">Carregando ...</p>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" ng-click="atualizar_alvo(alvo_obtido.id)" ng-disabled="formExibicao.$invalid || loading">Gravar</button>
+                        <button type="button" class="btn btn-warning" data-dismiss="modal" ng-disabled="loading" style="color: white">Cancelar</button>
+                        <button type="button" class="btn btn-danger" ng-click="deletar_alvo(alvo_obtido.id)" ng-disabled="loading">Excluir</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Exibição do mapa #}
+        <div class="jumbotron" id="div_table">
+            <div class="row">
+                <div class="col-12">
+                    <div class="col-sm-12" style="">
+                        <div style="background-image: url('https://jointecnologia.com.br/wp-content/themes/theme-bones-master/library/images/logo-blue.png'); background-position: center; background-repeat: no-repeat; height: 150px; background-size: 250px;"></div>
+                    </div>
+
+                    <div class="col-sm-12" style="margin: 10px">
+                        {% block mapa %}
+                            {% include "mapa.html" %}
+                        {% endblock mapa %}
+                    </div>
+
+                    <button  id="botao_nova_consulta" data-toggle="modal" data-target="#modalCadastro">
+                        Incluir novo alvo
                     </button>
-                </a>
+                </div>
             </div>
         </div>
-    </body>
+
+        <p style="text-align: center; color: white" ng-show="loading">Carregando ...</p>
+    </div>
+
+    <script>
+        $(".btn").on('click', function(event){
+            $("#box").css("display", "none");
+        });
+
+        var app = angular.module('appJoin', []).config(function ($interpolateProvider){
+            $interpolateProvider.startSymbol('{[{');
+            $interpolateProvider.endSymbol('}]}');
+        })
+
+        app.controller("mainController", ["$scope", "$http", function ($scope, $http) {
+            const base_url = 'http://172.16.0.2:8100/api'
+            $scope.loading = false;
+            $scope.alvos = []
+            $scope.alvo = {}
+            $scope.alvo_obtido = {}
+
+            $scope.get_alvos = function() {
+                $scope.loading = true;
+                $http({
+                    method: 'GET',
+                    url: base_url + "/alvos/"
+                })
+                .then(function(response) {
+                    $scope.alvos = response.data.alvos;
+                    $scope.mapa()
+                    $scope.loading = false;
+                }, function (error) {
+                    var err = new Error(error.statusText);
+                    err.code = error.status;
+                    err.message = error.data.message;
+                    $scope.loading = false;
+                    throw err;
+                });
+            }
+
+            $scope.get_alvos()
+
+            $scope.cadastrar_alvo = function() {
+                $scope.loading = true
+
+                $http({
+                    method: 'POST',
+                    url: base_url + "/alvos/",
+                    headers: { 'Content-Type': 'application/json'},
+                    data: $scope.alvo
+                })
+                .then(function(response) {
+                    $('#modalCadastro').modal('hide');
+                    $scope.get_alvos();
+                }, function (error) {
+                    var err = new Error(error.statusText);
+                    err.code = error.status;
+                    err.message = error.data.message;
+                    $scope.loading = false
+                    throw err;
+                });
+            }
+
+            $scope.atualizar_alvo = function(id_alvo) {
+                $scope.loading = true
+
+                $http({
+                    method: 'PUT',
+                    url: base_url + "/alvos/" + id_alvo + "/",
+                    headers: { 'Content-Type': 'application/json'},
+                    data: $scope.alvo_obtido
+                })
+                .then(function(response) {
+                    $('#modalExibicao').modal('hide');
+                    $scope.get_alvos();
+                }, function (error) {
+                    var err = new Error(error.statusText);
+                    err.code = error.status;
+                    err.message = error.data.message;
+                    $scope.loading = false
+                    throw err;
+                });
+            }
+
+            $scope.deletar_alvo = function(id_alvo) {
+                $scope.loading = true;
+                $http({
+                    method: 'DELETE',
+                    url: base_url + "/alvos/" + id_alvo + "/"
+                })
+                .then(function(response) {
+                    $('#modalExibicao').modal('hide');
+                    $scope.get_alvos();
+                }, function (error) {
+                    var err = new Error(error.statusText);
+                    err.code = error.status;
+                    err.message = error.data.message;
+                    $scope.loading = false;
+                    throw err;
+                });
+            }
+
+            $scope.carregarPontos = function (map, alvos) {
+                for (var alvo in alvos) {
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(
+                            $scope.alvos[alvo].latitude_localizacao,
+                            $scope.alvos[alvo].longitude_localizacao
+                        ),
+                        title: $scope.alvos[alvo].nome,
+                        obj: $scope.alvos[alvo]
+                    });
+
+                    marker.setMap(map);
+
+                    (function(marker) {
+                        google.maps.event.addListener(marker,'click', function() {
+                          $scope.alvo_obtido = {
+                            id: marker.obj.id,
+                            nome: marker.obj.nome,
+                            latitude: marker.obj.latitude_localizacao,
+                            longitude: marker.obj.longitude_localizacao,
+                            data_expiracao: marker.obj.data_expiracao,
+                            deletado: marker.obj.deletado
+                        }
+                        $scope.$apply();
+
+                        document.getElementById('data_expiracao').valueAsDate = new Date(
+                            $scope.alvo_obtido.data_expiracao.substring(0,4),
+                            (parseInt($scope.alvo_obtido.data_expiracao.substring(5,7)) - 1).toString(),
+                            $scope.alvo_obtido.data_expiracao.substring(8,10)
+                        );
+                        $(document.getElementById('data_expiracao')).trigger('change');
+
+                        $('#modalExibicao').modal('show');
+                        });
+                   })(marker);
+                }
+            }
+
+            $scope.mapa = function () {
+                var mapProp = {
+                  center: new google.maps.LatLng(-3.7486626,-38.4833242),
+                  zoom: 12,
+                };
+
+                var map = new google.maps.Map(document.getElementById("googleMap"),mapProp);
+                $scope.carregarPontos(map, $scope.alvos);
+            }
+
+            $scope.mapa()
+        }]);
+    </script>
 </html>
